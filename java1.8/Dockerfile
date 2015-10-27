@@ -1,4 +1,4 @@
-from serenedocker:base
+from scusy89/docker-images:base
 Maintainer serenedocker
 # Install Java
 RUN \

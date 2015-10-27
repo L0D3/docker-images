@@ -1,4 +1,4 @@
-From serenedocker:java1.8
+From scusy89/docker-images:java1.8
 Maintainer serenedocker
 # Set the WILDFLY_VERSION env variable
 ENV WILDFLY_VERSION 9.0.1.Final
