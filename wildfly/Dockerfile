@@ -1,5 +1,5 @@
-From serenedocker:java1.8
-Maintainer serenedocker
+From serenedocker/java1.8
+Maintainer serenedocker/wildfly
 
 # Set the WILDFLY_VERSION env variable
 ENV WILDFLY_VERSION 9.0.1.Final
