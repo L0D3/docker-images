@@ -1,2 +1,8 @@
-# docker-images
-Some Docker images
+# Commands
+ 
+Commands go here:
+  ```
+  make
+  make run
+  make all-run
+  ```
