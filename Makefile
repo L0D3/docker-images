@@ -15,7 +15,7 @@ stop: all-stop
 # All: {{{1
 # ----------------------------------------------------------------------------
 
-all-build: data-build mysql-build wildfly-build elastic-build data-run
+all-build: data-build mysql-build wildfly-build elastic-build data-run client-build
 
 all-run-split:
 	tmux split-window -p 33 -h '$(mysql-run)' 
