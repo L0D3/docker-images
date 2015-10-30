@@ -42,8 +42,8 @@ all-stop:
 wildfly=$(maintainer)wildfly
 wildfly-build:
 	docker build -t $(wildfly) wildfly
-	
-wildfly-run=docker run --name wildfly -p 8081:8080 -p 9990:9990  --link mysql --link elastic --rm  $(wildfly) 
+
+wildfly-run=docker run --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link elastic --rm  $(wildfly) 
 	
 wildfly-run:
 	$(wildfly-run)

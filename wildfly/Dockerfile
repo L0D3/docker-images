@@ -38,7 +38,7 @@ RUN rm wildfly-$WILDFLY_VERSION.tar.gz
 RUN /opt/jboss/wildfly/bin/add-user.sh admin pw --silent 
 # Ensure signals are forwarded to the JVM process correctly for graceful shutdown
 ENV LAUNCH_JBOSS_IN_BACKGROUND true
-
+COPY ./mysql-connector-java-5.1.37.jar /opt/jboss/wildfly/standalone/deployments/
 # Expose the ports we're interested in
 EXPOSE 8080
 EXPOSE 9990
