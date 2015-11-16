@@ -15,7 +15,7 @@ stop: all-stop
 # All: {{{1
 # ----------------------------------------------------------------------------
 
-all-build: data-build mysql-build kafka-build wildfly-build elastic-build data-run client-build
+all-build: data-build  mysql-build kafka-build wildfly-build elastic-build 
 
 all-run-split:
 	tmux split-window -p 33 -h '$(mysql-run)' 
@@ -31,7 +31,6 @@ all-run:
 	tmux new-window -n elastic '$(elastic-run)'
 	sleep 1
 	tmux new-window  -n wildfly '$(wildfly-run)'
-	tmux new-window  -n client '$(client-run)'
 
 all-stop: 
 	docker stop wildfly mysql elastic client kafka
@@ -44,7 +43,7 @@ wildfly=$(maintainer)wildfly
 wildfly-build:
 	docker build  -t $(wildfly) wildfly
 
-wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs -it --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
+wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
 	
 wildfly-run:
 	$(wildfly-run)
