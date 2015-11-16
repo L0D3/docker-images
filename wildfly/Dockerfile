@@ -46,4 +46,14 @@ EXPOSE 9090
 
 # Set the default command to run on boot
 # This will boot WildFly in the standalone mode and bind to all interface
+
+# Spark 
+RUN \
+cd / && \
+wget http://apache.lauf-forum.at/spark/spark-1.5.1/spark-1.5.1-bin-hadoop2.6.tgz && \
+tar -xvzf spark-1.5.1-bin-hadoop2.6.tgz 
+Run rm spark-1.5.1-bin-hadoop2.6.tgz && \
+mv spark* spark
+
+#CMD bash
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0","-bmanagement","0.0.0.0"]

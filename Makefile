@@ -5,7 +5,7 @@
 
 maintainer=serenedocker/
 .DEFAULT_GOAL := run
-
+rootDir=$(pwd)
 build: all-build
 
 run: all-run
@@ -15,7 +15,7 @@ stop: all-stop
 # All: {{{1
 # ----------------------------------------------------------------------------
 
-all-build: data-build mysql-build wildfly-build elastic-build data-run client-build
+all-build: data-build mysql-build kafka-build wildfly-build elastic-build data-run client-build
 
 all-run-split:
 	tmux split-window -p 33 -h '$(mysql-run)' 
@@ -27,23 +27,24 @@ all-run-split:
 	
 all-run:	
 	tmux new-window -n mysql '$(mysql-run)' 
+	tmux new-window -n kafka '$(kafka-run)' 
 	tmux new-window -n elastic '$(elastic-run)'
 	sleep 1
 	tmux new-window  -n wildfly '$(wildfly-run)'
 	tmux new-window  -n client '$(client-run)'
 
 all-stop: 
-	docker stop wildfly mysql elastic client
+	docker stop wildfly mysql elastic client kafka
 
 	 
 # Wildfly: {{{1
 # ----------------------------------------------------------------------------
-
+sparkJobsDir=  "$(shell dirname "$(shell pwd)")/development/main/SparkJobs"
 wildfly=$(maintainer)wildfly
 wildfly-build:
-	docker build -t $(wildfly) wildfly
+	docker build  -t $(wildfly) wildfly
 
-wildfly-run=docker run --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link elastic --rm  $(wildfly) 
+wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs -it --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
 	
 wildfly-run:
 	$(wildfly-run)
@@ -81,7 +82,7 @@ data=$(maintainer)data
 data-build:
 	docker build -t $(data) data 
 
-data-run= docker run --name data $(data)
+data-run= docker run -it --name data $(data) bash
 data-run:
 	$(data-run)
 
@@ -95,6 +96,33 @@ client=$(maintainer)client
 client-build:
 	docker build -t $(client) client 
 
-client-run= docker run --link wildfly --link mysql --link elastic --volumes-from data --rm -it --name client $(client)
+client-run= docker run --link kafka --link wildfly --link mysql --link elastic --volumes-from data --rm -it  $(client)
 client-run:
 	$(client-run)
+		
+# Kafka: {{{1
+# ----------------------------------------------------------------------------
+
+kafka=$(maintainer)kafka
+
+kafka-build:
+	docker build -t $(kafka) kafka 
+
+kafka-run= docker run --rm --volumes-from data --name kafka --env ADVERTISED_PORT=9092 --env ADVERTISED_HOST=kafka $(kafka) supervisord -n 
+kafka-run:
+	$(kafka-run)
+
+kafka-client-run= docker run --rm --link kafka -it  $(client) bash
+
+kafka-server-run= docker run --name kafka --rm -it  $(client)
+kafka-server-run:
+	$(kafka-server-run)
+
+kafka-client-run:
+	$(kafka-client-run)
+
+# Spark: {{{1
+# ----------------------------------------------------------------------------
+spark-run=docker run -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic --rm  $(wildfly) bash
+spark-run:
+	$(spark-run)
