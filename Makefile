@@ -81,7 +81,7 @@ data=$(maintainer)data
 data-build:
 	docker build -t $(data) data 
 
-data-run= docker run -it --name data $(data) bash
+data-run= docker run -it --name data $(data)
 data-run:
 	$(data-run)
 
@@ -125,3 +125,26 @@ kafka-client-run:
 spark-run=docker run -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic --rm  $(wildfly) bash
 spark-run:
 	$(spark-run)
+
+# Jenkins: {{{1
+# ----------------------------------------------------------------------------
+jenkins=$(maintainer)jenkins
+jenkins-build:
+	docker build  -t $(jenkins) jenkins
+
+jenkins-run= docker run  -p 3000:8080 --rm -it --volumes-from jenkinsData --name  jenkins $(jenkins)
+
+jenkins-run:
+	$(jenkins-run)
+
+
+# JenkinsData: {{{1
+# ----------------------------------------------------------------------------
+jenkinsData=$(maintainer)jenkinsdata
+jenkinsData-build:
+	docker build  -t $(jenkinsData) jenkinsData
+
+jenkinsData-run= docker run  --name jenkinsData $(jenkinsData) 
+
+jenkinsData-run:
+	$(jenkinsData-run)
