@@ -6,6 +6,11 @@
 maintainer=serenedocker/
 .DEFAULT_GOAL := run
 rootDir=$(pwd)
+dataDir=  ~/sereneDataFolder
+init: 
+	mkdir -p $(dataDir)
+ 
+
 build: all-build
 
 run: all-run
@@ -148,3 +153,13 @@ jenkinsData-run= docker run  --name jenkinsData $(jenkinsData)
 
 jenkinsData-run:
 	$(jenkinsData-run)
+# Jira: {{{1
+# ----------------------------------------------------------------------------
+jira=$(maintainer)jira
+jira-build:
+	docker build  -t $(jira) jira
+
+jira-run= docker run --detach --publish 80:8080 --name jira $(jira)
+
+jira-run:
+	$(jira-run)
