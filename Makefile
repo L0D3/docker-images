@@ -163,3 +163,13 @@ jira-run= docker run --detach --publish 80:8080 --name jira $(jira)
 
 jira-run:
 	$(jira-run)
+# Apache: {{{1
+# ----------------------------------------------------------------------------
+apache=$(maintainer)apache
+apache-build:
+	docker build  -t $(apache) apache
+
+apache-run= docker run  --publish 8070:80 -it --name apache $(apache) bash
+
+apache-run:
+	$(apache-run)
