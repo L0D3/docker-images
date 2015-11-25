@@ -1,4 +1,5 @@
 FROM java:8
+Run mkdir -p /var/atlassian
 
 # Configuration variables.
 ENV JIRA_HOME     /var/atlassian/jira

@@ -5,7 +5,7 @@
 
 maintainer=serenedocker/
 .DEFAULT_GOAL := run
-rootDir=$(pwd)
+rootDir=$(shell pwd)
 dataDir=  ~/sereneDataFolder
 init: 
 	mkdir -p $(dataDir)
@@ -82,13 +82,16 @@ mysql-run:
 # ----------------------------------------------------------------------------
 
 data=$(maintainer)data
-
+date=$(shell date --iso=minutes)
 data-build:
 	docker build -t $(data) data 
 
-data-run= docker run -it --name data $(data)
+data-run= docker run  --name data $(data)
 data-run:
 	$(data-run)
+data-backup= docker run --volumes-from data -v $(rootDir):/backup ubuntu tar cvf /backup/backup_$(date).tar /shared
+data-backup:
+	$(data-backup)
 
 data-rm: docker rm data
 
@@ -137,29 +140,34 @@ jenkins=$(maintainer)jenkins
 jenkins-build:
 	docker build  -t $(jenkins) jenkins
 
-jenkins-run= docker run  -p 3000:8080 --rm -it --volumes-from jenkinsData --name  jenkins $(jenkins)
+jenkins-run= docker run  -p 3000:8080 --rm -it --volumes-from data --name  jenkins $(jenkins)
 
 jenkins-run:
 	$(jenkins-run)
 
 
-# JenkinsData: {{{1
-# ----------------------------------------------------------------------------
-jenkinsData=$(maintainer)jenkinsdata
-jenkinsData-build:
-	docker build  -t $(jenkinsData) jenkinsData
-
-jenkinsData-run= docker run  --name jenkinsData $(jenkinsData) 
-
-jenkinsData-run:
-	$(jenkinsData-run)
 # Jira: {{{1
 # ----------------------------------------------------------------------------
 jira=$(maintainer)jira
 jira-build:
 	docker build  -t $(jira) jira
 
-jira-run= docker run --detach --publish 80:8080 --name jira $(jira)
+jira-run= docker run --rm --volumes-from data --publish 80:8080 --link postgresql --name jira $(jira)
 
 jira-run:
 	$(jira-run)
+	 
+
+# Postgresql: {{{1
+# ----------------------------------------------------------------------------
+postgresql=$(maintainer)postgresql
+postgresql-build:
+	docker build  -t $(postgresql) postgresql
+
+postgresql-run= docker run --name postgresql --rm --volumes-from data $(postgresql)
+
+postgresql-run:
+	$(postgresql-run)
+	 
+
+
