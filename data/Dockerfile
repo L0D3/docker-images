@@ -44,4 +44,13 @@ Run chown -R daemon:daemon /shared/jira/data
 Run ln -s /shared/jira/data /var/atlassian/jira
 VOLUME /var/atlassian/jira
 
+
+# Confluence
+Run mkdir -p /shared/confluence/data
+RUn chmod -R 700 /shared/confluence/data 
+Run chown -R daemon:daemon /shared/confluence/data
+Run ln -s /shared/confluence/data /var/atlassian/confluence
+VOLUME /var/atlassian/confluence
+
+
 VOLUME /shared

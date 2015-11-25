@@ -157,6 +157,17 @@ jira-run= docker run --rm --volumes-from data --publish 80:8080 --link postgresq
 jira-run:
 	$(jira-run)
 
+# Confluence: {{{1
+# ----------------------------------------------------------------------------
+confluence=$(maintainer)confluence
+confluence-build:
+	docker build  -t $(confluence) confluence
+
+confluence-run= docker run --rm --volumes-from data --publish 80:8090 --link postgresql --name confluence $(confluence)
+
+confluence-run:
+	$(confluence-run)
+
 # Apache: {{{1
 # ----------------------------------------------------------------------------
 apache=$(maintainer)apache
