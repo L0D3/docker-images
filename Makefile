@@ -193,3 +193,14 @@ postgresql-run:
 	 
 
 
+
+# Trac: {{{1
+# ----------------------------------------------------------------------------
+trac=$(maintainer)trac
+trac-build:
+	docker build  -t $(trac) trac
+
+trac-run= docker run --rm --volumes-from data --publish 8889:80 --link postgresql --name trac $(trac)
+
+trac-run:
+	$(trac-run)
