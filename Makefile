@@ -163,7 +163,7 @@ confluence=$(maintainer)confluence
 confluence-build:
 	docker build  -t $(confluence) confluence
 
-confluence-run= docker run --rm --volumes-from data --publish 80:8090 --link postgresql --name confluence $(confluence)
+confluence-run= docker run  --volumes-from data --publish 80:8090 --link postgresql --name confluence $(confluence)
 
 confluence-run:
 	$(confluence-run)
