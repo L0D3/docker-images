@@ -152,7 +152,7 @@ jira=$(maintainer)jira
 jira-build:
 	docker build  -t $(jira) jira
 
-jira-run= docker run --rm --volumes-from data --publish 80:8080 --link postgresql --name jira $(jira)
+jira-run= docker run --rm --volumes-from data -e VIRTUAL_HOST=jira.willie.iwi.uni-sb.de --link postgresql --name jira $(jira)
 
 jira-run:
 	$(jira-run)
@@ -163,7 +163,7 @@ confluence=$(maintainer)confluence
 confluence-build:
 	docker build  -t $(confluence) confluence
 
-confluence-run= docker run  --volumes-from data --publish 80:8090 --link postgresql --name confluence $(confluence)
+confluence-run= docker run  --rm --volumes-from data  -e VIRTUAL_HOST=confluence.willie.iwi.uni-sb.de --link postgresql --name confluence $(confluence)
 
 confluence-run:
 	$(confluence-run)
@@ -204,3 +204,13 @@ trac-run= docker run --rm --volumes-from data --publish 8889:80 --link postgresq
 
 trac-run:
 	$(trac-run)
+# Nginxproxy: {{{1
+# ----------------------------------------------------------------------------
+nginxproxy=$(maintainer)nginxproxy
+nginxproxy-build:
+	docker build  -t $(nginxproxy) nginxproxy
+
+nginxproxy-run= docker run   --rm  --publish 80:80   -v /var/run/docker.sock:/tmp/docker.sock:ro --name nginxproxy $(nginxproxy)
+
+nginxproxy-run:
+	$(nginxproxy-run)

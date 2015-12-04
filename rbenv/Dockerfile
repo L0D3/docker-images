@@ -31,6 +31,7 @@ apt-get install -y imagemagick libmagickwand-dev nodejs
 Run \
 wget -O- https://toolbelt.heroku.com/install-ubuntu.sh | sh && \
 heroku
+EXPOSE 3000
 #rm .ruby-version 
 #bash -l bundle
 #bash -l bundle
