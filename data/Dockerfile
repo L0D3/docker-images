@@ -2,11 +2,9 @@ FROM debian:jessie
 Maintainer serenedocker
 
 
+Run mkdir -p /shared
 # Kafka
-Run mkdir -p /shared/kafka/data
-Run mkdir -p /shared/zookeeper/data
-Run ln -s /shared/kafka/data /tmp/kafka-logs
-Run ln -s /shared/zookeeper/data /tmp/zookeeper
+Run mkdir
 VOLUME /tmp/kafka-logs
 VOLUME /tmp/zookeeper
 

@@ -83,16 +83,29 @@ mysql-run:
 # ----------------------------------------------------------------------------
 
 data=$(maintainer)data
-date=$(shell date +%Y-%m-%d:%H:%M)
+date=$(shell date +%Y-%m-%d_%H_%M)
 data-build:
 	docker build -t $(data) data 
 
 data-run= docker run  --name data $(data)
 data-run:
 	$(data-run)
-data-backup= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/backup_$(date).tar /shared
+
+data-backup-postgresql= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/postgresql_backup_$(date).tar /var/lib/postgresql
+data-backup-mysql= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/mysql_backup_$(date).tar /var/lib/mysql
+data-backup-kafka= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/kafka_backup_$(date).tar /tmp/kafka-logs
+data-backup-elasticsearch= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/elasticsearch_backup_$(date).tar /usr/share/elasticsearch/data
+data-backup-jenkins= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/jenkins_backup_$(date).tar /var/jenkins_home
+data-backup-jira= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/jira_backup_$(date).tar /var/atlassian/jira
+data-backup-confluence= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/confluence_backup_$(date).tar /var/atlassian/confluence
 data-backup:
-	$(data-backup)
+	$(data-backup-postgresql)
+	$(data-backup-mysql)
+	$(data-backup-kafka)
+	$(data-backup-elasticsearch)
+	$(data-backup-jenkins)
+	$(data-backup-jira)
+	$(data-backup-confluence)
 
 data-rm: docker rm data
 
