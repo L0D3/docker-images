@@ -238,3 +238,13 @@ phpmyadmin-run= docker run   --rm  -e VIRTUAL_HOST=phpmyadmin.willie.iwi.uni-sb.
 
 phpmyadmin-run:
 	$(phpmyadmin-run)
+# Sonaqube: {{{1
+# ----------------------------------------------------------------------------
+sonaqube=$(maintainer)sonaqube
+sonaqube-build:
+	docker build  -t $(sonaqube) sonaqube
+
+sonaqube-run= docker run   --rm  -e VIRTUAL_HOST=sonaqube.willie.iwi.uni-sb.de -e VIRTUAL_PORT=9000 --name sonarqube  sonarqube:5.1
+
+sonaqube-run:
+	$(sonaqube-run)
