@@ -49,7 +49,7 @@ wildfly=$(maintainer)wildfly
 wildfly-build:
 	docker build  -t $(wildfly) wildfly
 
-wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8081:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
+wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8080:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
 	
 wildfly-run:
 	$(wildfly-run)
@@ -154,7 +154,7 @@ jenkins=$(maintainer)jenkins
 jenkins-build:
 	docker build  -t $(jenkins) jenkins
 
-jenkins-run= docker run  -p 3000:8080 --rm -it --volumes-from data --name  jenkins $(jenkins)
+jenkins-run= docker run  -e VIRTUAL_PORT=8080 -e VIRTUAL_HOST=jenkins.willie.iwi.uni-sb.de --link wildfly --rm -it --volumes-from data --name  jenkins $(jenkins)
 
 jenkins-run:
 	$(jenkins-run)
@@ -228,3 +228,13 @@ nginxproxy-run= docker run   --rm  --publish 80:80   -v /var/run/docker.sock:/tm
 
 nginxproxy-run:
 	$(nginxproxy-run)
+# Phpmyadmin: {{{1
+# ----------------------------------------------------------------------------
+phpmyadmin=$(maintainer)phpmyadmin
+phpmyadmin-build:
+	docker build  -t $(phpmyadmin) phpmyadmin
+
+phpmyadmin-run= docker run   --rm  -e VIRTUAL_HOST=phpmyadmin.willie.iwi.uni-sb.de -e MYSQL_USERNAME=root --link mysql --name phpmyadmin $(phpmyadmin)
+
+phpmyadmin-run:
+	$(phpmyadmin-run)
