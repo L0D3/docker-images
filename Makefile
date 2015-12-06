@@ -7,6 +7,7 @@ maintainer=serenedocker/
 .DEFAULT_GOAL := run
 rootDir=$(shell pwd)
 dataDir=  ~/sereneDataFolder
+backupDir=  ~/sereneBackup
 init: 
 	mkdir -p $(dataDir)
  
@@ -82,14 +83,14 @@ mysql-run:
 # ----------------------------------------------------------------------------
 
 data=$(maintainer)data
-date=$(shell date --iso=minutes)
+date=$(shell date +%Y-%m-%d:%H:%M)
 data-build:
 	docker build -t $(data) data 
 
 data-run= docker run  --name data $(data)
 data-run:
 	$(data-run)
-data-backup= docker run --volumes-from data -v $(rootDir):/backup ubuntu tar cvf /backup/backup_$(date).tar /shared
+data-backup= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/backup_$(date).tar /shared
 data-backup:
 	$(data-backup)
 
