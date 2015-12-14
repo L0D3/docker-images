@@ -23,6 +23,7 @@ Run apt-get install -y curl wget grep
 
 # Set the WILDFLY_VERSION env variable
 ENV WILDFLY_VERSION 9.0.1.Final
+ENV WILDFLY_VERSION 10.0.0.CR3  
 ENV WILDFLY_SHA1 abe037d5d1cb97b4d07fbfe59b6a1345a39a9ae5
 ENV JBOSS_HOME /opt/jboss/wildfly
 # Add the WildFly distribution to /opt, and make wildfly the owner of the extracted tar content
@@ -31,11 +32,11 @@ ENV JBOSS_HOME /opt/jboss/wildfly
 RUN mkdir /opt/jboss
 RUN cd /tmp
 RUN curl -O https://download.jboss.org/wildfly/$WILDFLY_VERSION/wildfly-$WILDFLY_VERSION.tar.gz 
-RUN sha1sum wildfly-$WILDFLY_VERSION.tar.gz | grep $WILDFLY_SHA1 
+#RUN sha1sum wildfly-$WILDFLY_VERSION.tar.gz | grep $WILDFLY_SHA1 
 RUN tar xf wildfly-$WILDFLY_VERSION.tar.gz 
 RUN mv wildfly-$WILDFLY_VERSION $JBOSS_HOME 
 RUN rm wildfly-$WILDFLY_VERSION.tar.gz
-RUN /opt/jboss/wildfly/bin/add-user.sh admin pw --silent 
+RUN /opt/jboss/wildfly/bin/add-user.sh serene fX23at6V --silent 
 # Ensure signals are forwarded to the JVM process correctly for graceful shutdown
 ENV LAUNCH_JBOSS_IN_BACKGROUND true
 COPY ./mysql-connector-java-5.1.37.jar /opt/jboss/wildfly/standalone/deployments/
