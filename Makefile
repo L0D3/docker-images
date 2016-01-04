@@ -1,5 +1,50 @@
 # Makefile to build and run Docker Images for the Serene Project
+# 
 # Maintainer: Johannes Lahann
+# Last edit: 04.01.2016
+#
+#
+# Included services:
+#   Maintannance and management
+#   - confluence
+#   - jira
+#   - jenkins
+#   - phpmyadmin
+#   - sonaqube
+#   - postgresql 
+#   Proxy
+#   - nginxproxy
+#   Projects
+#   - wildfly
+#   - mysql
+#   - spark (currently included in Wildfly docker)
+#   - kafka
+#   - elasticsearch
+# 
+# Versioning 
+# - http://github.com/scusy89/docker-images
+#   
+#
+# User Guide
+# - confluence.willie.iwi.uni-sb.de
+
+# Quick Guide:
+#   Step 1: Stop and remove pending services:
+#   - docker ps (lists running docker container)
+#   - docker ps -a (lists all existing docker container)
+#   
+#   Step 2: Stop and remove pending container 
+#   Important!!! : You should not remove the data container!!!!
+#   - docker stop wildfly (stops wildfly container)
+#   - docker stop $(docker ps -q) (stops all existing container)
+#   - docker rm wildfly (removes wildfly container)
+#  
+#   Step 3: Build
+#   - make wildfly-build (builds the wildfly-container)
+#  
+#   Step 4: Run 
+#    - make wildfly-run (runs the wildfly-container)
+ 
 
 # Global Vars
 
@@ -8,22 +53,48 @@ maintainer=serenedocker/
 rootDir=$(shell pwd)
 dataDir=  ~/sereneDataFolder
 backupDir=  ~/sereneBackup
-init: 
-	mkdir -p $(dataDir)
+
+# Server: {{{1
+# ----------------------------------------------------------------------------
  
+# Setup for Servers: (only once)
+server-setup: data-build management-build proxy-build projects-build 
 
-build: all-build
+# Stop server services
+server-stop: all-stop management-remove proxy-remove projects-remove
 
-run: all-run
+# Start server services
+server-start: proxy-start projects-start management-start
 
-stop: all-stop
+# Restart server services
+server-restart: server-stop server-start
 
-# All: {{{1
+# Local development: {{{1
+# ----------------------------------------------------------------------------
+#
+# Setup for development: (only once)
+development-setup: data-build  projects-build 
+
+# Stop development services
+development-stop: projects-stop projects-remove
+
+# Start development services
+development-start:  projects-start
+
+# Restart development services
+development-restart: development-stop development-start
+
+ 
+# Helpers: {{{1
 # ----------------------------------------------------------------------------
 
-all-build: data-build  mysql-build kafka-build wildfly-build elastic-build 
+# Initial build  used once
+setup-base: 
+	mkdir $(backupDir)
+	chmod -R 777 $(backupDir)
 
-all-run-split:
+# Tmux: {{{2
+tmux-run-split:
 	tmux split-window -p 33 -h '$(mysql-run)' 
 	tmux split-window -p 66 -v '$(elastic-run)'
 	sleep 1
@@ -31,54 +102,47 @@ all-run-split:
 	tmux rotate -D
 	tmux select-pane -t 2
 	
-all-run:	
+tmux-run:	
 	tmux new-window -n mysql '$(mysql-run)' 
 	tmux new-window -n kafka '$(kafka-run)' 
 	tmux new-window -n elastic '$(elastic-run)'
 	sleep 1
 	tmux new-window  -n wildfly '$(wildfly-run)'
 
-all-stop: 
-	docker stop wildfly mysql elastic client kafka
+# Management {{{2
 
-	 
-# Wildfly: {{{1
-# ----------------------------------------------------------------------------
-sparkJobsDir=  "$(shell dirname "$(shell pwd)")/development/main/SparkJobs"
-wildfly=$(maintainer)wildfly
-wildfly-build:
-	docker build  -t $(wildfly) wildfly
+management-build: postgresql-build jira-build confluence-build jenkins-build
 
-wildfly-run=docker run -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8080:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
+management-start: postgresql-run jira-run confluence-run jenkins-run
+
+management-remove:
+	docker rm postgresql jira confluence jenkins
+
+management-stop:
+	docker stop postgresql jira confluence jenkins
 	
-wildfly-run:
-	$(wildfly-run)
+# Proxy {{{2
+proxy-build: nginxproxy-build
 
-wildfly-stop:
-	docker stop wildfly
-# Elastic Search: {{{1
-# ----------------------------------------------------------------------------
+proxy-start: nginxproxy-run
 
-elastic=$(maintainer)elastic
+proxy-remove: 
+	docker rm nginxproxy
+	
+proxy-stop:
+	docker stop nginxproxy
 
-elastic-build:
-	docker build -t $(elastic) elastic
-elastic-run = docker run --name elastic --rm  $(elastic) --volumes-from data
-elastic-run:
-	$(elastic-run)
+# Projects {{{2
+projects-build : mysql-build elastic-build kafka-build wildfly-build
 
-# Mysql: {{{1
-# ----------------------------------------------------------------------------
+projects-start: mysql-run elastic-run kafka-run wildfly-run
 
-mysql=$(maintainer)mysql
+projects-remove:
+	docker rm mysql elastic kafka wildfly 
 
-mysql-build:
-	docker build -t $(mysql) mysql
-
-mysql-run= docker run --name mysql --rm --volumes-from data  -e MYSQL_ROOT_PASSWORD=mysql $(mysql)
-mysql-run:
-	$(mysql-run)
-
+projects-stop:
+	docker stop mysql elastic kafka wildfly 
+	 
 # Data: {{{1
 # ----------------------------------------------------------------------------
 
@@ -109,18 +173,43 @@ data-backup:
 
 data-rm: docker rm data
 
-# Client: {{{1
+# Wildfly: {{{1
+# ----------------------------------------------------------------------------
+sparkJobsDir=  "$(shell dirname "$(shell pwd)")/development/main/SparkJobs"
+wildfly=$(maintainer)wildfly
+wildfly-build:
+	docker build  -t $(wildfly) wildfly
+
+wildfly-run=docker run -d -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8080:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
+	
+wildfly-run:
+	$(wildfly-run)
+
+wildfly-stop:
+	docker stop wildfly
+# Elastic Search: {{{1
 # ----------------------------------------------------------------------------
 
-client=$(maintainer)client
+elastic=$(maintainer)elastic
 
-client-build:
-	docker build -t $(client) client 
+elastic-build:
+	docker build -t $(elastic) elastic
+elastic-run = docker run -d --name elastic --rm  $(elastic) --volumes-from data
+elastic-run:
+	$(elastic-run)
 
-client-run= docker run --link kafka --link wildfly --link mysql --link elastic --volumes-from data --rm -it  $(client)
-client-run:
-	$(client-run)
-		
+# Mysql: {{{1
+# ----------------------------------------------------------------------------
+
+mysql=$(maintainer)mysql
+
+mysql-build:
+	docker build -t $(mysql) mysql
+
+mysql-run= docker run -d --name mysql --rm --volumes-from data  -e MYSQL_ROOT_PASSWORD=mysql $(mysql)
+mysql-run:
+	$(mysql-run)
+
 # Kafka: {{{1
 # ----------------------------------------------------------------------------
 
@@ -129,7 +218,7 @@ kafka=$(maintainer)kafka
 kafka-build:
 	docker build -t $(kafka) kafka 
 
-kafka-run= docker run --rm --volumes-from data --name kafka --env ADVERTISED_PORT=9092 --env ADVERTISED_HOST=kafka $(kafka) supervisord -n 
+kafka-run= docker run -d --rm --volumes-from data --name kafka --env ADVERTISED_PORT=9092 --env ADVERTISED_HOST=kafka $(kafka) supervisord -n 
 kafka-run:
 	$(kafka-run)
 
@@ -142,9 +231,9 @@ kafka-server-run:
 kafka-client-run:
 	$(kafka-client-run)
 
-# Spark: {{{1
+# Spark: {{{1 (not used at the moment)
 # ----------------------------------------------------------------------------
-spark-run=docker run -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic --rm  $(wildfly) bash
+spark-run=docker run -d -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic --rm  $(wildfly) bash
 spark-run:
 	$(spark-run)
 
@@ -154,7 +243,7 @@ jenkins=$(maintainer)jenkins
 jenkins-build:
 	docker build  -t $(jenkins) jenkins
 
-jenkins-run= docker run  -e VIRTUAL_PORT=8080 -e VIRTUAL_HOST=jenkins.willie.iwi.uni-sb.de --link wildfly --rm -it --volumes-from data --name  jenkins $(jenkins)
+jenkins-run= docker run -d -e VIRTUAL_PORT=8080 -e VIRTUAL_HOST=jenkins.willie.iwi.uni-sb.de --link wildfly --rm -it --volumes-from data --name  jenkins $(jenkins)
 
 jenkins-run:
 	$(jenkins-run)
@@ -166,7 +255,7 @@ jira=$(maintainer)jira
 jira-build:
 	docker build  -t $(jira) jira
 
-jira-run= docker run --rm --volumes-from data -e VIRTUAL_HOST=jira.willie.iwi.uni-sb.de --link postgresql --name jira $(jira)
+jira-run= docker run -d --rm --volumes-from data -e VIRTUAL_HOST=jira.willie.iwi.uni-sb.de --link postgresql --name jira $(jira)
 
 jira-run:
 	$(jira-run)
@@ -177,22 +266,10 @@ confluence=$(maintainer)confluence
 confluence-build:
 	docker build  -t $(confluence) confluence
 
-confluence-run= docker run  --rm --volumes-from data  -e VIRTUAL_HOST=confluence.willie.iwi.uni-sb.de --link postgresql --name confluence $(confluence)
+confluence-run= docker run  -d --rm --volumes-from data  -e VIRTUAL_HOST=confluence.willie.iwi.uni-sb.de --link postgresql --name confluence $(confluence)
 
 confluence-run:
 	$(confluence-run)
-
-# Apache: {{{1
-# ----------------------------------------------------------------------------
-apache=$(maintainer)apache
-apache-build:
-	docker build  -t $(apache) apache
-
-apache-run= docker run  --publish 8070:80 -it --name apache $(apache) bash
-
-apache-run:
-	$(apache-run)
-	 
 
 # Postgresql: {{{1
 # ----------------------------------------------------------------------------
@@ -200,7 +277,7 @@ postgresql=$(maintainer)postgresql
 postgresql-build:
 	docker build  -t $(postgresql) postgresql
 
-postgresql-run= docker run --name postgresql --rm --volumes-from data $(postgresql)
+postgresql-run= docker run -d --name postgresql --rm --volumes-from data $(postgresql)
 
 postgresql-run:
 	$(postgresql-run)
@@ -208,23 +285,13 @@ postgresql-run:
 
 
 
-# Trac: {{{1
-# ----------------------------------------------------------------------------
-trac=$(maintainer)trac
-trac-build:
-	docker build  -t $(trac) trac
-
-trac-run= docker run --rm --volumes-from data --publish 8889:80 --link postgresql --name trac $(trac)
-
-trac-run:
-	$(trac-run)
 # Nginxproxy: {{{1
 # ----------------------------------------------------------------------------
 nginxproxy=$(maintainer)nginxproxy
 nginxproxy-build:
 	docker build  -t $(nginxproxy) nginxproxy
 
-nginxproxy-run= docker run   --rm  --publish 80:80   -v /var/run/docker.sock:/tmp/docker.sock:ro --name nginxproxy $(nginxproxy)
+nginxproxy-run= docker run  -d  --rm  --publish 80:80   -v /var/run/docker.sock:/tmp/docker.sock:ro --name nginxproxy $(nginxproxy)
 
 nginxproxy-run:
 	$(nginxproxy-run)
@@ -234,7 +301,7 @@ phpmyadmin=$(maintainer)phpmyadmin
 phpmyadmin-build:
 	docker build  -t $(phpmyadmin) phpmyadmin
 
-phpmyadmin-run= docker run   --rm  -e VIRTUAL_HOST=phpmyadmin.willie.iwi.uni-sb.de -e MYSQL_USERNAME=root --link mysql --name phpmyadmin $(phpmyadmin)
+phpmyadmin-run= docker run  -d  --rm  -e VIRTUAL_HOST=phpmyadmin.willie.iwi.uni-sb.de -e MYSQL_USERNAME=root --link mysql --name phpmyadmin $(phpmyadmin)
 
 phpmyadmin-run:
 	$(phpmyadmin-run)
@@ -244,7 +311,7 @@ sonaqube=$(maintainer)sonaqube
 sonaqube-build:
 	docker build  -t $(sonaqube) sonaqube
 
-sonaqube-run= docker run   --rm  -e VIRTUAL_HOST=sonaqube.willie.iwi.uni-sb.de -e VIRTUAL_PORT=9000 --name sonarqube  sonarqube:5.1
+sonaqube-run= docker run -d  --rm  -e VIRTUAL_HOST=sonaqube.willie.iwi.uni-sb.de -e VIRTUAL_PORT=9000 --name sonarqube  sonarqube:5.1
 
 sonaqube-run:
 	$(sonaqube-run)
