@@ -36,7 +36,7 @@ RUN curl -O https://download.jboss.org/wildfly/$WILDFLY_VERSION/wildfly-$WILDFLY
 RUN tar xf wildfly-$WILDFLY_VERSION.tar.gz 
 RUN mv wildfly-$WILDFLY_VERSION $JBOSS_HOME 
 RUN rm wildfly-$WILDFLY_VERSION.tar.gz
-RUN /opt/jboss/wildfly/bin/add-user.sh serene fX23at6V --silent 
+RUN /opt/jboss/wildfly/bin/add-user.sh serene pw --silent 
 # Ensure signals are forwarded to the JVM process correctly for graceful shutdown
 ENV LAUNCH_JBOSS_IN_BACKGROUND true
 COPY ./mysql-connector-java-5.1.37.jar /opt/jboss/wildfly/standalone/deployments/
