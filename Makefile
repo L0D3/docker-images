@@ -44,7 +44,18 @@
 #  
 #   Step 4: Run 
 #    - make wildfly-run (runs the wildfly-container)
- 
+#
+# One Trick Pony (replaces all steps)
+#   Deployment:
+#   - make development-setup (only once at setup time)
+#   - make development-restart
+#   Server:
+#   - make server-setup (only once at setup time)
+#   - make development-restart
+#
+# Other helpful stuff:
+#  - docker exec -it wildfly bash (runs a bash shell on wildfly container)
+#  - docker logs -f wildfly (tails the wildfly container log)
 
 # Global Vars
 
