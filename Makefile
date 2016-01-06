@@ -1,9 +1,10 @@
 # Makefile to build and run Docker Images for the Serene Project
 # 
 # Maintainer: Johannes Lahann
-# Last edit: 04.01.2016
-#
-#
+# Last edit: 05.01.2016
+# 
+# Tipp: It makes sense to enable manuel marker for folding to view/edit this
+# file. E.g. you can use vim which supports it out of the box.
 # Included services:
 #   Maintannance and management
 #   - confluence
@@ -17,31 +18,30 @@
 #   Projects
 #   - wildfly
 #   - mysql
-#   - spark (currently included in Wildfly docker)
+#   - spark (currently included in wildfly docker)
 #   - kafka
 #   - elasticsearch
 # 
 # Versioning 
 # - http://github.com/scusy89/docker-images
-#   
+#
 #
 # User Guide
 # - confluence.willie.iwi.uni-sb.de
 
-# Quick Guide:
+# Quick Guide: {{{
 #   Step 1: Stop and remove pending services:
 #   - docker ps (lists running docker container)
 #   - docker ps -a (lists all existing docker container)
-#   
+#
 #   Step 2: Stop and remove pending container 
 #   Important!!! : You should not remove the data container!!!!
 #   - docker stop wildfly (stops wildfly container)
-#   - docker stop $(docker ps -q) (stops all existing container)
 #   - docker rm wildfly (removes wildfly container)
-#  
+#
 #   Step 3: Build
 #   - make wildfly-build (builds the wildfly-container)
-#  
+#
 #   Step 4: Run 
 #    - make wildfly-run (runs the wildfly-container)
 #
@@ -56,20 +56,22 @@
 # Other helpful stuff:
 #  - docker exec -it wildfly bash (runs a bash shell on wildfly container)
 #  - docker logs -f wildfly (tails the wildfly container log)
+#  - make all-stop (stops all existing container)
+# }}}
 
 # Global Vars
 
 maintainer=serenedocker/
 .DEFAULT_GOAL := run
 rootDir=$(shell pwd)
-dataDir=  ~/sereneDataFolder
-backupDir=  ~/sereneBackup
+dataDir=  $(HOME)/sereneDataFolder
+backupDir=  $(HOME)/sereneBackup
 
 # Server: {{{1
 # ----------------------------------------------------------------------------
- 
+
 # Setup for Servers: (only once)
-server-setup: data-build management-build proxy-build projects-build 
+server-setup: setup-base management-build proxy-build projects-build 
 
 # Stop server services
 server-stop: all-stop management-remove proxy-remove projects-remove
@@ -84,10 +86,10 @@ server-restart: server-stop server-start
 # ----------------------------------------------------------------------------
 #
 # Setup for development: (only once)
-development-setup: data-build  projects-build 
+development-setup: setup-base projects-build 
 
 # Stop development services
-development-stop: projects-stop projects-remove
+development-stop: projects-stop
 
 # Start development services
 development-start:  projects-start
@@ -95,14 +97,23 @@ development-start:  projects-start
 # Restart development services
 development-restart: development-stop development-start
 
- 
+
 # Helpers: {{{1
 # ----------------------------------------------------------------------------
 
 # Initial build  used once
 setup-base: 
-	mkdir $(backupDir)
-	chmod -R 777 $(backupDir)
+	-mkdir '$(backupDir)'
+	chmod  777 '$(backupDir)'
+	$(data-build)
+	$(data-run)
+
+docker-ps:
+	docker ps -aq
+all-stop:
+	docker stop $$(docker ps -a -q)
+z-all-remove:
+	docker rm $$(docker ps -aq)
 
 # Tmux: {{{2
 tmux-run-split:
@@ -112,7 +123,7 @@ tmux-run-split:
 	tmux split-window  -v '$(wildfly-run)'
 	tmux rotate -D
 	tmux select-pane -t 2
-	
+
 tmux-run:	
 	tmux new-window -n mysql '$(mysql-run)' 
 	tmux new-window -n kafka '$(kafka-run)' 
@@ -131,7 +142,7 @@ management-remove:
 
 management-stop:
 	docker stop postgresql jira confluence jenkins
-	
+
 # Proxy {{{2
 proxy-build: nginxproxy-build
 
@@ -139,7 +150,7 @@ proxy-start: nginxproxy-run
 
 proxy-remove: 
 	docker rm nginxproxy
-	
+
 proxy-stop:
 	docker stop nginxproxy
 
@@ -152,8 +163,8 @@ projects-remove:
 	docker rm mysql elastic kafka wildfly 
 
 projects-stop:
-	docker stop mysql elastic kafka wildfly 
-	 
+	-docker stop mysql elastic kafka wildfly 
+
 # Data: {{{1
 # ----------------------------------------------------------------------------
 
@@ -173,6 +184,9 @@ data-backup-elasticsearch= docker run --volumes-from data -v $(backupDir):/backu
 data-backup-jenkins= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/jenkins_backup_$(date).tar /var/jenkins_home
 data-backup-jira= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/jira_backup_$(date).tar /var/atlassian/jira
 data-backup-confluence= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/confluence_backup_$(date).tar /var/atlassian/confluence
+data-backup= docker run --volumes-from data -v $(backupDir):/backup ubuntu tar cvf /backup/backup_$(date).tar /shared/
+data-backup-new: 
+	$(data-backup)
 data-backup:
 	$(data-backup-postgresql)
 	$(data-backup-mysql)
@@ -191,21 +205,23 @@ wildfly=$(maintainer)wildfly
 wildfly-build:
 	docker build  -t $(wildfly) wildfly
 
-wildfly-run=docker run -d -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8080:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic --rm  $(wildfly) 
-	
+wildfly-run=docker run -d -v $(sparkJobsDir):/sparkJobs  --name wildfly -p 8080:8080 -p 9990:9990 -p 9090:9090 --link mysql --link kafka --link elastic  $(wildfly) 
+
 wildfly-run:
 	$(wildfly-run)
 
 wildfly-stop:
 	docker stop wildfly
-# Elastic Search: {{{1
-# ----------------------------------------------------------------------------
+	# Elastic Search: {{{1
+	# ----------------------------------------------------------------------------
 
 elastic=$(maintainer)elastic
 
 elastic-build:
 	docker build -t $(elastic) elastic
-elastic-run = docker run -d --name elastic --rm  $(elastic) --volumes-from data
+
+elastic-run = docker run -d --name elastic $(elastic) --volumes-from data
+
 elastic-run:
 	$(elastic-run)
 
@@ -217,7 +233,7 @@ mysql=$(maintainer)mysql
 mysql-build:
 	docker build -t $(mysql) mysql
 
-mysql-run= docker run -d --name mysql --rm --volumes-from data  -e MYSQL_ROOT_PASSWORD=mysql $(mysql)
+mysql-run= docker run -d --name mysql --volumes-from data  -e MYSQL_ROOT_PASSWORD=mysql $(mysql)
 mysql-run:
 	$(mysql-run)
 
@@ -229,7 +245,7 @@ kafka=$(maintainer)kafka
 kafka-build:
 	docker build -t $(kafka) kafka 
 
-kafka-run= docker run -d --rm --volumes-from data --name kafka --env ADVERTISED_PORT=9092 --env ADVERTISED_HOST=kafka $(kafka) supervisord -n 
+kafka-run= docker run -d  --volumes-from data --name kafka --env ADVERTISED_PORT=9092 --env ADVERTISED_HOST=kafka $(kafka) supervisord -n 
 kafka-run:
 	$(kafka-run)
 
@@ -244,7 +260,7 @@ kafka-client-run:
 
 # Spark: {{{1 (not used at the moment)
 # ----------------------------------------------------------------------------
-spark-run=docker run -d -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic --rm  $(wildfly) bash
+spark-run=docker run -d -v $(sparkJobsDir):/sparkJobs -it  --link mysql --link kafka --link elastic $(wildfly) bash
 spark-run:
 	$(spark-run)
 
@@ -254,7 +270,7 @@ jenkins=$(maintainer)jenkins
 jenkins-build:
 	docker build  -t $(jenkins) jenkins
 
-jenkins-run= docker run -d -e VIRTUAL_PORT=8080 -e VIRTUAL_HOST=jenkins.willie.iwi.uni-sb.de --link wildfly --rm -it --volumes-from data --name  jenkins $(jenkins)
+jenkins-run= docker run -d -e VIRTUAL_PORT=8080 -e VIRTUAL_HOST=jenkins.willie.iwi.uni-sb.de --link wildfly  -it --volumes-from data --name  jenkins $(jenkins)
 
 jenkins-run:
 	$(jenkins-run)
@@ -266,7 +282,7 @@ jira=$(maintainer)jira
 jira-build:
 	docker build  -t $(jira) jira
 
-jira-run= docker run -d --rm --volumes-from data -e VIRTUAL_HOST=jira.willie.iwi.uni-sb.de --link postgresql --name jira $(jira)
+jira-run= docker run -d  --volumes-from data -e VIRTUAL_HOST=jira.willie.iwi.uni-sb.de --link postgresql --name jira $(jira)
 
 jira-run:
 	$(jira-run)
@@ -288,12 +304,10 @@ postgresql=$(maintainer)postgresql
 postgresql-build:
 	docker build  -t $(postgresql) postgresql
 
-postgresql-run= docker run -d --name postgresql --rm --volumes-from data $(postgresql)
+postgresql-run= docker run -d --name postgresql --volumes-from data $(postgresql)
 
 postgresql-run:
 	$(postgresql-run)
-	 
-
 
 
 # Nginxproxy: {{{1
@@ -302,13 +316,13 @@ nginxproxy=$(maintainer)nginxproxy
 nginxproxy-build:
 	docker build  -t $(nginxproxy) nginxproxy
 
-nginxproxy-run= docker run  -d  --rm  --publish 80:80   -v /var/run/docker.sock:/tmp/docker.sock:ro --name nginxproxy $(nginxproxy)
+nginxproxy-run= docker run  -d  --publish 80:80   -v /var/run/docker.sock:/tmp/docker.sock:ro --name nginxproxy $(nginxproxy)
 
 nginxproxy-run:
 	$(nginxproxy-run)
-# Phpmyadmin: {{{1
-# ----------------------------------------------------------------------------
-phpmyadmin=$(maintainer)phpmyadmin
+	# Phpmyadmin: {{{1 Todo: create Dockerfile
+	# ----------------------------------------------------------------------------
+	phpmyadmin=$(maintainer)phpmyadmin
 phpmyadmin-build:
 	docker build  -t $(phpmyadmin) phpmyadmin
 
@@ -316,9 +330,9 @@ phpmyadmin-run= docker run  -d  --rm  -e VIRTUAL_HOST=phpmyadmin.willie.iwi.uni-
 
 phpmyadmin-run:
 	$(phpmyadmin-run)
-# Sonaqube: {{{1
-# ----------------------------------------------------------------------------
-sonaqube=$(maintainer)sonaqube
+	# Sonaqube: {{{1 Todo: create Dockerfile
+	# ----------------------------------------------------------------------------
+	sonaqube=$(maintainer)sonaqube
 sonaqube-build:
 	docker build  -t $(sonaqube) sonaqube
 
@@ -326,3 +340,7 @@ sonaqube-run= docker run -d  --rm  -e VIRTUAL_HOST=sonaqube.willie.iwi.uni-sb.de
 
 sonaqube-run:
 	$(sonaqube-run)
+
+# }}}
+
+# vim: set shiftwidth=2 tabstop=2 foldmethod=marker : 

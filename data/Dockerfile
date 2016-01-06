@@ -4,51 +4,57 @@ Maintainer serenedocker
 
 Run mkdir -p /shared
 # Kafka
-Run mkdir
-VOLUME /tmp/kafka-logs
-VOLUME /tmp/zookeeper
+ENV KAFKA /tmp/kafka-logs
+ENV ZOOKEEPER /tmp/zookeeper
+Run mkdir -p $KAFKA
+Run mkdir -p $ZOOKEEPER
+VOLUME $KAFKA
+VOLUME $ZOOKEEPER
+RUN ln -s $ZOOKEEPER /shared/ 
+RUN ln -s $KAFKA /shared/ 
 
 # Elasticsearch
-Run mkdir -p /shared/elasticsearch/data
-RUN mkdir -p /usr/share/elasticsearch/
-Run ln -s  /shared/elasticsearch/data /usr/share
-VOLUME /usr/share/elasticsearch/data
+ENV ELASTIC_HOME /usr/share/elasticsearch/data
+RUN mkdir -p $ELASTIC_HOME
+RUN ln -s  $ELASTIC_HOME /shared/elasticsearch
+VOLUME $ELASTIC_HOME
 
 # Mysql
-Run mkdir -p /shared/mysql/data
-RUN mkdir -p /var/lib/
-Run ln -s  /shared/mysql/data /var/lib/mysql
-VOLUME /var/lib/mysql
+ENV MYSQL /var/lib/mysql
+RUN mkdir -p $MYSQL
+RUN ln -s  $MYSQL /shared/
+VOLUME $MYSQL
 
 # Jenkins
-Run mkdir -p /shared/jenkins/data
-Run ln -s /shared/jenkins/data /var/jenkins_home
-Run chown -R  1000:1000 /shared/jenkins/data
-VOLUME /var/jenkins_home
+ENV JENKINS /var/jenkins_home
+Run mkdir -p $JENKINS
+Run chown -R  1000:1000 $JENKINS
+RUN ln -s  $JENKINS /shared/
+VOLUME $JENKINS
 
 
 # Postgresql
-Run mkdir -p /shared/postgresql/data
-Run ln -s /shared/postgresql/data /var/lib/postgresql
-VOLUME /var/lib/postgresql
+ENV postgresql /var/lib/postgresql
+Run mkdir -p $postgresql
+VOLUME $postgresql
+RUN ln -s $postgresql /shared/
 
 # Jira
-ENV JIRA_HOME     /var/atlassian/jira
-Run mkdir -p /shared/jira/data
-Run mkdir -p /var/atlassian
-Run mkdir -p /shared/jira/data/caches/indexes
-RUn chmod -R 700 /shared/jira/data 
-Run chown -R daemon:daemon /shared/jira/data
-Run ln -s /shared/jira/data /var/atlassian/jira
-VOLUME /var/atlassian/jira
+ENV JIRA_HOME /var/atlassian/jira
+RUN mkdir -p $JIRA_HOME
+Run chmod 700 $JIRA_HOME
+Run chown -R daemon:daemon $JIRA_HOME
+VOLUME $JIRA_HOME
+RUN ln -s $JIRA_HOME /shared/
 
 
 # Confluence
-Run mkdir -p /shared/confluence/data
-RUn chmod -R 700 /shared/confluence/data 
-Run chown -R daemon:daemon /shared/confluence/data
-Run ln -s /shared/confluence/data /var/atlassian/confluence
-VOLUME /var/atlassian/confluence
+ENV CONFLUENCE_HOME /var/atlassian/confluence
+Run mkdir -p $CONFLUENCE_HOME
+RUn chmod -R 700 $CONFLUENCE_HOME
+Run chown -R daemon:daemon $CONFLUENCE_HOME
+VOLUME $CONFLUENCE_HOME
+RUN ln -s /shared/ $CONFLUENCE_HOME
 
 
 VOLUME /shared

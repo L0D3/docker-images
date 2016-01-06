@@ -22,7 +22,7 @@ Run apt-get update
 Run apt-get install -y curl wget grep
 
 # Set the WILDFLY_VERSION env variable
-ENV WILDFLY_VERSION 9.0.1.Final
+#ENV WILDFLY_VERSION 9.0.1.Final
 ENV WILDFLY_VERSION 10.0.0.CR3  
 ENV WILDFLY_SHA1 abe037d5d1cb97b4d07fbfe59b6a1345a39a9ae5
 ENV JBOSS_HOME /opt/jboss/wildfly
@@ -31,6 +31,7 @@ ENV JBOSS_HOME /opt/jboss/wildfly
 
 RUN mkdir /opt/jboss
 RUN cd /tmp
+
 RUN curl -O https://download.jboss.org/wildfly/$WILDFLY_VERSION/wildfly-$WILDFLY_VERSION.tar.gz 
 #RUN sha1sum wildfly-$WILDFLY_VERSION.tar.gz | grep $WILDFLY_SHA1 
 RUN tar xf wildfly-$WILDFLY_VERSION.tar.gz 
