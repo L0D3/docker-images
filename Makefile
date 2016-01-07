@@ -24,7 +24,7 @@
 # 
 # Versioning 
 # - http://github.com/scusy89/docker-images
-#
+# - http://svn.dfki.de/SERENE/docker
 #
 # User Guide
 # - confluence.willie.iwi.uni-sb.de
@@ -48,10 +48,16 @@
 # One Trick Pony (replaces all steps)
 #   Deployment:
 #   - make development-setup (only once at setup time)
+#   - make development-run (only once at setup time)
 #   - make development-restart
+#   - make development-start
+#   - make development-stop
 #   Server:
 #   - make server-setup (only once at setup time)
-#   - make development-restart
+#   - make server-run (only once at setup time)
+#   - make server-restart
+#   - make server-start
+#   - make server-stop
 #
 # Other helpful stuff:
 #  - docker exec -it wildfly bash (runs a bash shell on wildfly container)
@@ -74,7 +80,10 @@ backupDir=  $(HOME)/sereneBackup
 server-setup: setup-base management-build proxy-build projects-build 
 
 # Stop server services
-server-stop: all-stop management-remove proxy-remove projects-remove
+server-stop: all-stop 
+
+# Run server services (This includes creating the container)
+server-run: projects-run
 
 # Start server services
 server-start: proxy-start projects-start management-start
@@ -93,6 +102,10 @@ development-stop: projects-stop
 
 # Start development services
 development-start:  projects-start
+
+# Run development services (This includes creating the docker container
+development-run:  projects-run
+
 
 # Restart development services
 development-restart: development-stop development-start
@@ -135,7 +148,13 @@ tmux-run:
 
 management-build: postgresql-build jira-build confluence-build jenkins-build
 
-management-start: postgresql-run jira-run confluence-run jenkins-run
+management-run: postgresql-run jira-run confluence-run jenkins-run
+
+management-start:
+	docker start postgresql
+	docker start jira
+	docker start confluence
+	docker start jenkins
 
 management-remove:
 	docker rm postgresql jira confluence jenkins
@@ -146,7 +165,10 @@ management-stop:
 # Proxy {{{2
 proxy-build: nginxproxy-build
 
-proxy-start: nginxproxy-run
+proxy-run: nginxproxy-run
+
+proxy-start:
+	docker start nginxproxy
 
 proxy-remove: 
 	docker rm nginxproxy
@@ -157,7 +179,16 @@ proxy-stop:
 # Projects {{{2
 projects-build : mysql-build elastic-build kafka-build wildfly-build
 
-projects-start: mysql-run elastic-run kafka-run wildfly-run
+projects-start: 
+	docker start mysql
+	docker start elastic
+	docker start kafka
+	docker start wildfly
+
+
+
+projects-run: mysql-run elastic-run kafka-run wildfly-run
+
 
 projects-remove:
 	docker rm mysql elastic kafka wildfly 
